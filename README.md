@@ -163,12 +163,10 @@ cd VirtuHand
 
 3. **Run the Backend**
 ```bash
-# Navigate to project directory
-cd VirtuHand
-
 # Start the Python server
-python test_server.py
+python tests/test_server.py
 ```
+After running the server, switch to Unity and enter Game mode to begin hand tracking.
 
 **Important Notes:**
 - Hand Model Setup:
