@@ -28,12 +28,11 @@ public class DebugTestClient : MonoBehaviour
     private float reconnectTimer = 0f;
     private bool isReconnecting = false;
 
-    // Movement parameters
     [Header("Movement Settings")]
-    public float moveSpeed = 5.0f;  // Smoothing factor
-    public float horizontalBound = 5.0f;  // X-axis movement bound
-    public float verticalBound = 3.0f;    // Y-axis movement bound
-    public float depthBound = 4.0f;       // Z-axis movement bound
+    public float moveSpeed = 5.0f;  
+    public float horizontalBound = 5.0f;  
+    public float verticalBound = 3.0f;    
+    public float depthBound = 4.0f;       
     
     private Vector3 initialPosition;
     private Vector3 targetPosition;
@@ -104,8 +103,7 @@ public class DebugTestClient : MonoBehaviour
             
             if (isHandDetected && data.hand_position != null)
             {
-                // Update target position based on hand position
-                // Note: Z is now being used for depth movement
+                
                 targetPosition = new Vector3(
                     initialPosition.x + (data.hand_position.x * horizontalBound),
                     initialPosition.y + (data.hand_position.y * verticalBound),
@@ -140,7 +138,6 @@ public class DebugTestClient : MonoBehaviour
             }
         }
 
-        // Smooth movement towards target position
         if (handIndicator != null && isHandDetected)
         {
             handIndicator.transform.position = Vector3.Lerp(
@@ -159,7 +156,6 @@ public class DebugTestClient : MonoBehaviour
         }
     }
 
-    // Optional: Add visual debugging
     void OnDrawGizmos()
     {
         if (handIndicator != null)

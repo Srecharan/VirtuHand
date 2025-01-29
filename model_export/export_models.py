@@ -14,7 +14,6 @@ def export_hand_detection_model(output_dir):
     """Export the MediaPipe hand detection model to ONNX format"""
     print("Exporting hand detection model...")
     
-    # Load MediaPipe hand detection model
     hands = mp.solutions.hands
     detection_model = hands.Hands(
         static_image_mode=True,
@@ -50,7 +49,6 @@ def export_hand_landmark_model(output_dir):
     
     output_path = os.path.join(output_dir, 'hand_landmark.onnx')
     
-    # Convert to ONNX
     try:
         model_proto, _ = tf2onnx.convert.from_keras(
             landmark_model,
@@ -63,11 +61,9 @@ def export_hand_landmark_model(output_dir):
         print(f"Error exporting hand landmark model: {str(e)}")
 
 def main():
-    # Create output directory
     output_dir = create_output_directory()
     print(f"Output directory created at: {output_dir}")
     
-    # Export models
     export_hand_detection_model(output_dir)
     export_hand_landmark_model(output_dir)
     

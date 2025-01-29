@@ -22,7 +22,7 @@ public class Finger
 public class FingerState
 {
     public bool isExtended;
-    public float bendAngle;  // 0 = straight, 1 = fully bent
+    public float bendAngle;  
 }
 
 [System.Serializable]
@@ -30,7 +30,7 @@ public class HandGestureMessage : HandTrackingMessage
 {
     public string gesture_type;
     public float gesture_confidence;
-    public FingerState[] fingerStates;  // thumb, index, middle, ring, pinky
+    public FingerState[] fingerStates;  
     public string dynamic_gesture_type;
     public float dynamic_gesture_confidence;
 }
@@ -41,25 +41,25 @@ public class HandGestureController : MonoBehaviour
     bool isConnected = false;
 
     [Header("Finger References")]
-    public List<Finger> fingers;  // Set up in inspector
+    public List<Finger> fingers;  
 
     [Header("Gesture Settings")]
-    public float gestureSpeed = 8.0f;  // Speed of finger movement
-    public bool invertFingerRotation = false;  // In case we need to flip rotation direction
+    public float gestureSpeed = 8.0f;  
+    public bool invertFingerRotation = false;  
 
      [Header("Position Settings")]
     public float moveSpeed = 5.0f;
-    public float horizontalBound = 8.0f;  // Increased for wider movement
-    public float verticalBound = 6.0f;    // Increased for taller movement
+    public float horizontalBound = 8.0f;  
+    public float verticalBound = 6.0f;    
     public float depthBound = 4.0f;  
-    public float minDepthOffset = -14.0f;  // New variable
-    public float maxDepthOffset = -10.0f;  // New variable
-    public float sensitivityMultiplier = 2.0f;  // Amplifies hand movement
+    public float minDepthOffset = -14.0f;  
+    public float maxDepthOffset = -10.0f;  
+    public float sensitivityMultiplier = 2.0f;  
     public bool enablePositionTracking = true;
 
     [Header("Flower Settings")]
-    public Transform ground;  // Reference to the ground object (pot)
-    public float snapDistance = 2.0f;  // Maximum distance to snap to pot
+    public Transform ground;  
+    public float snapDistance = 2.0f;  
     private Dictionary<string, Vector3> flowerSnapPositions = new Dictionary<string, Vector3>()
     {
         {"flowers_1", new Vector3(8.58f, 6.13f, -3.56f)},
@@ -75,48 +75,45 @@ public class HandGestureController : MonoBehaviour
     public GameObject flowers_02_02;
 
     [Header("Day Night Controller")]
-    public GameObject dayNightController;  // Assign this in Inspector
-    private bool isDayNightEnabled = true;  // Track if day/night cycle is active
+    public GameObject dayNightController;  
+    private bool isDayNightEnabled = true; 
     private bool wasPinching = false;
-    private float targetRotation = 0f;  // Target Z rotation
-    //private float rotationSpeed = 10f;   // Speed of rotation transition
-    //private bool isSwipeActive = false;  // Track if swipe is active
+    private float targetRotation = 0f;  
+    //private float rotationSpeed = 10f;  
+    //private bool isSwipeActive = false;  
 
     private bool isHandDetected = false;
     private float reconnectTimer = 0f;
     private bool isReconnecting = false;
     private readonly float RECONNECT_INTERVAL = 2f;
     private string currentGesture = "NONE";
-    
-    // Position tracking variables
+
     private Vector3 initialPosition;
     private Vector3 targetPosition;
     private Quaternion initialRotation;
-    private float zPosition;  // Store fixed Z position
+    private float zPosition;  
 
     private GameObject grabbedObject;
     private bool isGrabbing = false;
     private Vector3 grabbedObjectOffset;
-    private readonly float grabDistance = 1.0f; // Maximum distance to grab object
+    private readonly float grabDistance = 1.0f;
     private readonly float grabSpeed = 10f; 
-    // Add these at top of class with other private variables
-    private bool isAnimating = false;  // Track if animation is in progress
-    private float currentAngle = 0f;   // Current rotation angle
-    private float targetAngle = 0f;    // Target rotation angle
-    private float returnDelay = 0.2f;  // Time to wait at max angle before returning
-    private float returnTimer = 0f;    // Timer for return delay
-    private float rotationSpeed = 240f; // Degrees per second (adjust for speed)
+    private bool isAnimating = false; 
+    private float currentAngle = 0f;   
+    private float targetAngle = 0f;    
+    private float returnDelay = 0.2f;  
+    private float returnTimer = 0f;    
+    private float rotationSpeed = 240f; 
 
     private BoxCollider handCollider;
     private bool isColliding = false;
     [Header("Interaction Settings")]
-    public float pushForce = 5f;  // How strongly the hand pushes objects
-    private Vector3 previousHandPosition;  // To calculate hand velocity
+    public float pushForce = 5f;  
+    private Vector3 previousHandPosition;  
 
 
     private void HandleDynamicGesture(string gestureType, float confidence)
     {
-        // Skip if confidence too low or already animating
         if (confidence < 0.7f || isAnimating)
             return;
 
@@ -151,7 +148,7 @@ public class HandGestureController : MonoBehaviour
     void SaveInitialTransform()
     {
         initialPosition = transform.position;
-        zPosition = initialPosition.z;  // Store initial Z position
+        zPosition = initialPosition.z;  
         targetPosition = initialPosition;
         initialRotation = transform.rotation;
         Debug.Log($"Initial position set to: {initialPosition}");
@@ -170,7 +167,6 @@ public class HandGestureController : MonoBehaviour
                     rb = flower.AddComponent<Rigidbody>();
                 }
                 
-                // Only freeze Y position
                 rb.constraints = RigidbodyConstraints.FreezePositionY;
                 rb.isKinematic = true;
                 rb.useGravity = false;
@@ -239,17 +235,14 @@ public class HandGestureController : MonoBehaviour
             {
                 if (enablePositionTracking && data.hand_position != null)
                 {
-                    // Log raw values from server
+                   
                     Debug.Log($"Raw position from server - X: {data.hand_position.x:F3}, Y: {data.hand_position.y:F3}, Z: {data.hand_position.z:F3}");
 
-                    // Handle X and Y movement
                     float amplifiedX = -data.hand_position.x * sensitivityMultiplier;
-                    float amplifiedY = -data.hand_position.y * sensitivityMultiplier;
+                    float amplifiedY = -data.hand_position.y * sensitivityMultiplier;                 
+                   
+                    float normalizedZ = -data.hand_position.z; 
                     
-                    // Handle Z movement - keep original value but invert for natural movement
-                    float normalizedZ = -data.hand_position.z;  // Invert Z for natural movement
-                    
-                    // Clamp all values
                     float clampedX = Mathf.Clamp(amplifiedX, -1f, 1f);
                     float clampedY = Mathf.Clamp(amplifiedY, -1f, 1f);
                     float clampedZ = Mathf.Clamp(normalizedZ, -1f, 1f);
@@ -264,7 +257,6 @@ public class HandGestureController : MonoBehaviour
                     // Update target position
                     targetPosition = newPosition;
 
-                    // Detailed debug logging
                     Debug.Log($"Processed values - X: {clampedX:F3}, Y: {clampedY:F3}, Z: {clampedZ:F3}");
                     Debug.Log($"Current position: {transform.position:F3}");
                     Debug.Log($"Target position: {targetPosition:F3}");
@@ -276,18 +268,15 @@ public class HandGestureController : MonoBehaviour
                     HandleDynamicGesture(data.dynamic_gesture_type, data.dynamic_gesture_confidence);
                 }
                 else
-                {
-                    // Reset flower rotations when no gesture is detected
+                {  
                     ResetFlowerRotations();
                 }
 
-                // Update finger gestures
                 UpdateHandGesture(data);
                 currentGesture = data.gesture_type;
             }
             else
             {
-                // Reset flower rotations when hand is not detected
                 ResetFlowerRotations();
             }
         }
@@ -301,13 +290,11 @@ public class HandGestureController : MonoBehaviour
     {
         Debug.Log($"Received gesture: {data.gesture_type}");
         
-        // Check for pinch gesture state change
         bool isPinching = (data.gesture_type == "PINCH");
-        if (isPinching != wasPinching)  // Only handle when pinch state changes
+        if (isPinching != wasPinching)  
         {
             if (isPinching)  // Pinch started
             {
-                // Turn off day/night when pinch starts
                 if (dayNightController != null)
                 {
                     dayNightController.SetActive(false);
@@ -316,7 +303,6 @@ public class HandGestureController : MonoBehaviour
             }
             else  // Pinch ended
             {
-                // Turn on day/night when pinch ends
                 if (dayNightController != null)
                 {
                     dayNightController.SetActive(true);
@@ -326,7 +312,6 @@ public class HandGestureController : MonoBehaviour
             wasPinching = isPinching;
         }
 
-        // Handle the gestures
         if (data.gesture_type == "GRAB")
         {
             if (!isGrabbing)
@@ -345,11 +330,10 @@ public class HandGestureController : MonoBehaviour
         }
         else if (data.gesture_type == "PINCH")
         {
-            SetPinchGesture();  // Just handle finger animation
+            SetPinchGesture();  
         }
         else
         {
-            // Handle other gestures
             switch(data.gesture_type)
             {
                 case "POINT":
@@ -371,7 +355,7 @@ public class HandGestureController : MonoBehaviour
 
     void TryGrabNearestObject()
     {
-        // Find all nearby interactable objects
+
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, grabDistance);
         float closestDistance = float.MaxValue;
         GameObject closestObject = null;
@@ -391,14 +375,11 @@ public class HandGestureController : MonoBehaviour
 
         if (closestObject != null)
         {
-            // Grab the object
             grabbedObject = closestObject;
             isGrabbing = true;
             
-            // Store the initial offset between hand and object
             grabbedObjectOffset = grabbedObject.transform.position - transform.position;
             
-            // Disable object's rigidbody physics while grabbed
             Rigidbody rb = grabbedObject.GetComponent<Rigidbody>();
             if (rb != null)
             {
@@ -418,7 +399,6 @@ public class HandGestureController : MonoBehaviour
             Rigidbody rb = grabbedObject.GetComponent<Rigidbody>();
             if (rb != null)
             {
-                // First set the rotation to upright
                 grabbedObject.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
                 
                 if (flowerSnapPositions.ContainsKey(grabbedObject.name))
@@ -431,7 +411,6 @@ public class HandGestureController : MonoBehaviour
                         grabbedObject.transform.position = snapPosition;
                         Debug.Log($"Snapped {grabbedObject.name} to position: {snapPosition}");
                         
-                        // Only freeze Y position
                         rb.constraints = RigidbodyConstraints.FreezePositionY;
                     }
                     else
@@ -478,7 +457,6 @@ public class HandGestureController : MonoBehaviour
             {
                 if (joint.joint != null)
                 {
-                    // More aggressive finger movement
                     float targetBend = state.isExtended ? 0f : 1f;
                     
                     Vector3 targetRotation = Vector3.Lerp(
@@ -487,7 +465,6 @@ public class HandGestureController : MonoBehaviour
                         targetBend
                     );
 
-                    // Modified thumb handling
                     if (finger.name == "Thumb" && !state.isExtended)
                     {
                         targetRotation += new Vector3(0, 0, 45f);
@@ -518,10 +495,9 @@ public class HandGestureController : MonoBehaviour
                 Vector3 targetRotation = open ? joint.openRotation : joint.closedRotation;
                 if (joint.joint != null)
                 {
-                    // Add extra rotation for thumb when closing
                     if (finger.name == "Thumb" && !open)
                     {
-                        targetRotation.z += 45f; // Additional inward rotation for thumb
+                        targetRotation.z += 45f; 
                     }
                     
                     joint.joint.localRotation = Quaternion.Lerp(
@@ -583,7 +559,6 @@ public class HandGestureController : MonoBehaviour
             websocket.DispatchMessageQueue();
         }
 
-        // Handle reconnection logic
         if (!isConnected && !isReconnecting)
         {
             reconnectTimer += Time.deltaTime;
@@ -597,12 +572,10 @@ public class HandGestureController : MonoBehaviour
 
         if (isAnimating)
         {
-            // Calculate rotation step
             float step = rotationSpeed * Time.deltaTime;
             
             if (returnTimer > 0)
             {
-                // Moving to target angle
                 currentAngle = Mathf.MoveTowards(currentAngle, targetAngle, step);
                 if (Mathf.Approximately(currentAngle, targetAngle))
                 {
@@ -611,7 +584,6 @@ public class HandGestureController : MonoBehaviour
             }
             else
             {
-                // Return to zero
                 currentAngle = Mathf.MoveTowards(currentAngle, 0f, step);
                 if (Mathf.Approximately(currentAngle, 0f))
                 {
@@ -619,7 +591,6 @@ public class HandGestureController : MonoBehaviour
                 }
             }
 
-            // Apply rotation to all flowers
             GameObject[] flowers = { flowers_1, flowers_02, flowers_02_01, flowers_02_02 };
             foreach (GameObject flower in flowers)
             {
@@ -631,7 +602,6 @@ public class HandGestureController : MonoBehaviour
             }
         }
 
-        // Update hand position
         if (enablePositionTracking && isHandDetected)
         {
             Vector3 currentPos = transform.position;
@@ -643,7 +613,6 @@ public class HandGestureController : MonoBehaviour
             
             transform.position = smoothedPosition;
             
-            // Update grabbed object position if we're holding one
             if (isGrabbing && grabbedObject != null)
             {
                 Vector3 targetObjectPosition = transform.position + grabbedObjectOffset;
@@ -700,7 +669,7 @@ public class HandGestureController : MonoBehaviour
     {
         if (dayNightController != null)
         {
-            isDayNightEnabled = !isDayNightEnabled;  // Toggle the state
+            isDayNightEnabled = !isDayNightEnabled;  
             dayNightController.SetActive(isDayNightEnabled);
             Debug.Log($"Day Night cycle is now {(isDayNightEnabled ? "enabled" : "disabled")}");
         }
@@ -711,6 +680,3 @@ public class HandGestureController : MonoBehaviour
     }
 
 }
-// 3.621272
-// 2.733984e-07
-// 3.621272

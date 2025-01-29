@@ -3,9 +3,9 @@ import os
 
 def combine_videos_side_by_side():
     # Define paths
-    left_video = "/home/rex/real_time_hand_gesture_v1/assets/demo2_unity.mp4"
-    right_video = "/home/rex/real_time_hand_gesture_v1/assets/demo2_hand.mp4"
-    output_path = "/home/rex/real_time_hand_gesture_v1/final_combined.mp4"
+    left_video = "/home/rex/real_time_hand_gesture_v1/hand2.mp4"
+    right_video = "/home/rex/real_time_hand_gesture_v1/unity2.mp4"
+    output_path = "/home/rex/real_time_hand_gesture_v1/final_combined2.mp4"
     
     # Check if input files exist
     if not os.path.exists(left_video):

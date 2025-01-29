@@ -25,20 +25,15 @@ public class GestureClient : MonoBehaviour
     private WebSocket websocket;
     private readonly string serverUrl = "ws://127.0.0.1:8765";
     private bool isConnected = false;
-    // Add these fields at the top of your GestureClient class, right after the object references
-    private const int MAX_RECONNECT_ATTEMPTS = 3;  // Maximum number of times we'll try to connect
-    private int reconnectAttempts = 0;            // Counter for connection attempts
-
-    // References to the objects we'll manipulate
+    private const int MAX_RECONNECT_ATTEMPTS = 3;  
+    private int reconnectAttempts = 0;            
     public GameObject grabCube;
     public GameObject pinchSphere;
 
     void Awake()
     {
-        // Log references status on startup
         Debug.Log($"Initial Object References - GrabCube: {grabCube != null}, PinchSphere: {pinchSphere != null}");
 
-        // Verify object references
         if (grabCube == null)
         {
             Debug.LogError("GrabCube reference is missing! Please assign it in the Inspector.");
@@ -62,7 +57,6 @@ public class GestureClient : MonoBehaviour
         await ConnectToServer();
     }
 
-    // In GestureClient.cs, update the ConnectToServer method
     async Task ConnectToServer()
     {
         Debug.Log("Starting connection process...");
@@ -140,7 +134,6 @@ public class GestureClient : MonoBehaviour
             GestureData gestureData = JsonUtility.FromJson<GestureData>(jsonData);
             Debug.Log($"Received gesture: {gestureData.gesture_type} with confidence: {gestureData.confidence}");
 
-            // Handle different gestures
             switch (gestureData.gesture_type)
             {
                 case "OPEN_PALM":
@@ -165,7 +158,6 @@ public class GestureClient : MonoBehaviour
 
     private void HandleOpenPalm(GestureData data)
     {
-        // For now, just log the gesture
         Debug.Log($"Open Palm detected! Hand: {data.hand_side}, Confidence: {data.confidence}");
     }
 
@@ -173,7 +165,6 @@ public class GestureClient : MonoBehaviour
     {
         if (pinchSphere != null)
         {
-            // Scale the sphere based on palm position
             float scale = Mathf.Abs(data.palm_position.z) * 0.1f;
             pinchSphere.transform.localScale = new Vector3(scale, scale, scale);
         }
@@ -183,22 +174,20 @@ public class GestureClient : MonoBehaviour
     {
         if (grabCube != null)
         {
-            // Move the cube to follow the hand with larger movement scale
             Vector3 newPosition = new Vector3(
-                data.palm_position.x * 10f,  // Increased movement scale
-                data.palm_position.y * 10f + 2f,  // Added offset to raise it above ground
-                Mathf.Abs(data.palm_position.z) * 10f + 2f  // Keep it in front of camera
+                data.palm_position.x * 10f,  
+                data.palm_position.y * 10f + 2f,  
+                Mathf.Abs(data.palm_position.z) * 10f + 2f  
             );
 
-            // Debug.Log to help us understand what's happening
             Debug.Log($"Hand Position: ({data.palm_position.x}, {data.palm_position.y}, {data.palm_position.z})");
             Debug.Log($"Moving cube to: {newPosition}");
 
             grabCube.transform.position = Vector3.Lerp(
                 grabCube.transform.position,
                 newPosition,
-                Time.deltaTime * 10f  // Faster response
-            );
+                Time.deltaTime * 10f 
+            );    
         }
         else
         {
@@ -208,7 +197,6 @@ public class GestureClient : MonoBehaviour
 
     private void HandlePoint(GestureData data)
     {
-        // For now, just log the gesture
         Debug.Log($"Point detected! Hand: {data.hand_side}, Confidence: {data.confidence}");
     }
 

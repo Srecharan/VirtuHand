@@ -29,7 +29,7 @@ class GRUGestureModel(nn.Module):
     def forward(self, x):
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
         out, _ = self.gru(x, h0)
-        out = self.fc(out[:, -1, :])  # Take only the last output
+        out = self.fc(out[:, -1, :])  
         return out
 
 class DynamicGestureRecognizer:
@@ -40,24 +40,22 @@ class DynamicGestureRecognizer:
         self.last_position = None
         
         # Adjusted thresholds
-        self.min_velocity_threshold = 0.01  # Reduced from 0.02
-        self.min_active_frames = 10    # Reduced from 15
-        self.motion_confidence_threshold = 0.6  # Reduced from 0.7
+        self.min_velocity_threshold = 0.01  
+        self.min_active_frames = 10   
+        self.motion_confidence_threshold = 0.6  
         
         # Gesture-specific parameters
-        self.swipe_min_distance = 0.15  # Reduced from 0.3
-        self.swipe_max_vertical = 0.1  # Maximum vertical movement for swipes
-        self.circle_min_points = 15    # Reduced from 20
-        
-        # Add cooldown for gestures
+        self.swipe_min_distance = 0.15  
+        self.swipe_max_vertical = 0.1  
+        self.circle_min_points = 15    
+
         self.last_gesture = None
         self.gesture_cooldown = 0
-        self.cooldown_frames = 15  # Frames to wait before detecting same gesture
-        
-        # Store previous gesture for continuity
+        self.cooldown_frames = 15  
+
         self.prev_gesture = DynamicGestureType.NONE
         self.gesture_count = 0
-        self.min_consistent_frames = 5  # Minimum frames to maintain same gesture
+        self.min_consistent_frames = 5  
         
     def _calculate_velocity_components(self, landmarks: dict) -> tuple:
         """Calculate both horizontal and vertical velocity components."""
@@ -98,14 +96,13 @@ class DynamicGestureRecognizer:
         
     def _check_swipe_pattern(self, positions: np.ndarray) -> Optional[DynamicGestureType]:
         """Enhanced swipe detection with direction validation."""
-        if len(positions) < 10:  # Need minimum points for swipe
+        if len(positions) < 10:  
             return None
             
         # Calculate total horizontal and vertical movement
         total_movement = positions[-1] - positions[0]
         dx, dy = abs(total_movement[0]), abs(total_movement[1])
         
-        # Check if movement is primarily horizontal
         if dx > self.swipe_min_distance and dx > dy * 2:
             # Determine direction
             direction = np.sign(total_movement[0])
@@ -118,16 +115,14 @@ class DynamicGestureRecognizer:
         if len(positions) < self.circle_min_points:
             return 0.0
             
-        # Center the positions
         centered = positions - positions.mean(axis=0)
         
         # Calculate radius for each point
         radii = np.linalg.norm(centered, axis=1)
         mean_radius = np.mean(radii)
         
-        # Check if points maintain consistent distance from center
         radius_variation = np.std(radii) / mean_radius
-        if radius_variation > 0.4:  # Allow more variation in radius
+        if radius_variation > 0.4: 
             return 0.0
             
         # Calculate angles and their changes
@@ -141,7 +136,7 @@ class DynamicGestureRecognizer:
         total_angle = np.abs(np.sum(angle_diffs))
         
         # Check for minimum rotation (at least 270 degrees)
-        if total_angle < 4.7:  # 4.7 radians ≈ 270 degrees
+        if total_angle < 4.7:  
             return 0.0
             
         # Calculate direction consistency
@@ -161,7 +156,7 @@ class DynamicGestureRecognizer:
         
     def _check_wave_pattern(self, positions: np.ndarray) -> float:
         """Enhanced wave detection with stricter vertical movement check."""
-        if len(positions) < 15:  # Need minimum points for wave
+        if len(positions) < 15: 
             return 0.0
             
         # Get vertical positions
@@ -179,7 +174,6 @@ class DynamicGestureRecognizer:
                   y_positions[i] < y_positions[i+1]):
                 valleys.append(i)
         
-        # Need at least 2 peaks and 2 valleys
         if len(peaks) >= 2 and len(valleys) >= 2:
             # Calculate average peak-to-valley distance
             peak_valley_heights = []
@@ -188,10 +182,9 @@ class DynamicGestureRecognizer:
             
             avg_height = np.mean(peak_valley_heights)
             
-            # Check if horizontal movement is minimal
             x_movement = abs(positions[-1, 0] - positions[0, 0])
             if x_movement < avg_height * 0.5:
-                return min(1.0, avg_height * 5)  # Scale confidence with wave amplitude
+                return min(1.0, avg_height * 5) 
         
         return 0.0
     
@@ -203,31 +196,25 @@ class DynamicGestureRecognizer:
         if len(self.velocity_buffer) > self.sequence_length:
             self.velocity_buffer.pop(0)
             
-        # Store landmarks
         self.landmark_buffer.append(landmarks)
         if len(self.landmark_buffer) > self.sequence_length:
             self.landmark_buffer.pop(0)
             
-        # Decrease cooldown
         if self.gesture_cooldown > 0:
             self.gesture_cooldown -= 1
-            
-        # Get motion type
+
         has_motion, motion_type = self._detect_significant_motion()
         if not has_motion:
             self.prev_gesture = DynamicGestureType.NONE
             return DynamicGestureResult(DynamicGestureType.NONE, 0.0)
-            
-        # Extract positions for analysis
+
         positions = np.array([[landmarks[0].x, landmarks[0].y] 
                             for landmarks in self.landmark_buffer])
-        
-        # Check each gesture type with confidence
+
         confidences = {
             DynamicGestureType.NONE: 0.0
         }
-        
-        # Check swipe if motion is primarily horizontal
+
         if motion_type == "horizontal":
             swipe_type = self._check_swipe_pattern(positions)
             if swipe_type:
@@ -254,7 +241,6 @@ class DynamicGestureRecognizer:
         else:
             self.gesture_count = 0
         
-        # Only switch gestures if new gesture is significantly more confident
         if (best_gesture[1] > self.motion_confidence_threshold and 
             (best_gesture[0] == self.prev_gesture or 
              best_gesture[1] > confidences.get(self.prev_gesture, 0) + 0.2)):

@@ -5,22 +5,17 @@ import numpy as np
 import os
 
 def convert_mediapipe_model():
-    # Initialize MediaPipe Hands
     mp_hands = mp.solutions.hands
     
-    # Get the model path
     base_path = mp_hands._ROOT
     model_path = os.path.join(base_path, 'hand_landmark_full.tflite')
     
-    # Load the TFLite model and allocate tensors
     interpreter = tf.lite.Interpreter(model_path=model_path)
     interpreter.allocate_tensors()
     
-    # Get input and output details
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
     
-    # Create a simple TF model that wraps the TFLite model
     class HandLandmarkModel(tf.Module):
         def __init__(self, interpreter):
             self.interpreter = interpreter
@@ -37,7 +32,6 @@ def convert_mediapipe_model():
             landmarks = self.interpreter.get_tensor(output_details[0]['index'])
             return landmarks
     
-    # Create and save the model
     model = HandLandmarkModel(interpreter)
     
     # Convert to ONNX

@@ -30,12 +30,12 @@ class GestureResult:
 class GestureClassifier:
     def __init__(self):
         self.gesture_history = []
-        self.history_size = 5  # Number of frames to consider for smoothing
+        self.history_size = 5  
         
         # Adjusted thresholds with tolerance ranges
-        self.finger_straight_min = 160  # Minimum angle for "straight" finger
-        self.finger_bent_max = 90      # Maximum angle for "bent" finger
-        self.pinch_threshold = 0.1     # Increased for better pinch detection
+        self.finger_straight_min = 160  
+        self.finger_bent_max = 90      
+        self.pinch_threshold = 0.1    
         
     def _get_finger_state(self, angles: List[float]) -> List[bool]:
         """
@@ -47,7 +47,7 @@ class GestureClassifier:
     def _calculate_finger_angles(self, landmarks: Dict) -> List[float]:
         """Calculate angles for each finger with improved robustness."""
         angles = []
-        # Define finger joint triplets (base, middle, tip)
+
         finger_indices = [
             (5, 6, 8),   # Index
             (9, 10, 12), # Middle
@@ -84,7 +84,6 @@ class GestureClassifier:
         for g, c in self.gesture_history:
             gesture_counts[g] = gesture_counts.get(g, 0) + 1
         
-        # Get most common gesture and its average confidence
         most_common = max(gesture_counts.items(), key=lambda x: x[1])
         if most_common[1] >= self.history_size * 0.6:  # 60% threshold
             confidences = [c for g, c in self.gesture_history if g == most_common[0]]
@@ -96,7 +95,6 @@ class GestureClassifier:
         """
         Strict open palm detection - requires ALL fingers to be clearly extended.
         """
-        # Get wrist position as reference point
         wrist = np.array([landmarks[0].x, landmarks[0].y])
         
         # Check each fingertip's position relative to its base (MCP joint)
@@ -140,7 +138,6 @@ class GestureClassifier:
             'pinky': np.array([landmarks[20].x, landmarks[20].y])
         }
         
-        # Count how many fingers are close to thumb
         close_fingers = 0
         pinch_distance = float('inf')
         
@@ -150,7 +147,6 @@ class GestureClassifier:
                 close_fingers += 1
                 pinch_distance = min(pinch_distance, distance)
         
-        # Only return confidence if exactly one finger is close to thumb
         if close_fingers == 1:
             return 1.0 - (pinch_distance / self.pinch_threshold)
         return 0.0
@@ -182,8 +178,7 @@ class GestureClassifier:
         if np.linalg.norm(thumb_tip - wrist) < np.linalg.norm(thumb_base - wrist):
             curled_fingers += 1
         
-        # Return confidence based on number of curled fingers
-        return 1.0 if curled_fingers >= 4 else 0.0  # Consider grab if at least 4 fingers are curled
+        return 1.0 if curled_fingers >= 4 else 0.0  
 
 
     def _check_point(self, landmarks: Dict) -> float:
@@ -223,18 +218,18 @@ class GestureClassifier:
             return 1.0
         return 0.0
 
-    def _check_victory(self, finger_states: List[bool], angles: List[float]) -> float:
-        """Check if hand is making a victory/peace gesture."""
-        # First two fingers should be extended, others bent
-        correct_finger_state = (
-            finger_states[0] and  # Index extended
-            finger_states[1] and  # Middle extended
-            not any(finger_states[2:])  # Others bent
-        )
+    # def _check_victory(self, finger_states: List[bool], angles: List[float]) -> float:
+    #     """Check if hand is making a victory/peace gesture."""
+    #     # First two fingers should be extended, others bent
+    #     correct_finger_state = (
+    #         finger_states[0] and  # Index extended
+    #         finger_states[1] and  # Middle extended
+    #         not any(finger_states[2:])  # Others bent
+    #     )
         
-        if correct_finger_state:
-            return 1.0
-        return 0.0
+    #     if correct_finger_state:
+    #         return 1.0
+    #     return 0.0
     
     def classify_gesture(self, hand) -> GestureResult:
         """Classify gesture with improved none detection."""
@@ -245,16 +240,15 @@ class GestureClassifier:
             GestureType.GRAB: self._check_grab(hand.landmarks),
             GestureType.POINT: self._check_point(hand.landmarks)  # Add this line
         }
-        
-        # Print confidence scores for debugging
+
         print("\nConfidence scores:")
         for gesture, confidence in gesture_confidence.items():
             print(f"{gesture.name}: {confidence:.2f}")
         
         best_gesture = max(gesture_confidence.items(), key=lambda x: x[1])
         
-        # Return NONE if confidence is too low
-        if best_gesture[1] < 0.6:  # Increased threshold for more reliable detection
+    
+        if best_gesture[1] < 0.6: 
             return GestureResult(
                 gesture_type=GestureType.NONE,
                 confidence=0.0,
@@ -262,7 +256,6 @@ class GestureClassifier:
                 palm_position=hand.palm_center
             )
         
-        # Apply smoothing
         smoothed_gesture, smoothed_confidence = self._smooth_gesture(
             best_gesture[0], best_gesture[1]
         )

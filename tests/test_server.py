@@ -11,6 +11,7 @@ from src.gesture.dynamic_gesture import DynamicGestureRecognizer, DynamicGesture
 from typing import Optional, Tuple
 import numpy as np
 from enum import Enum, auto
+import os
 
 class DynamicGestureRecognizer:
     def __init__(self, sequence_length=30):
@@ -18,18 +19,14 @@ class DynamicGestureRecognizer:
         self.landmark_buffer = []
         self.velocity_buffer = []
         self.last_position = None
-        
-        # Adjusted thresholds
+
         self.min_velocity_threshold = 0.01
         self.min_active_frames = 10
         self.motion_confidence_threshold = 0.6
-        
-        # Gesture-specific parameters
+
         self.swipe_min_distance = 0.15
         self.swipe_max_vertical = 0.1
         self.circle_min_points = 15
-        
-        # Gesture continuity
         self.prev_gesture = DynamicGestureType.NONE
         self.gesture_count = 0
         self.min_consistent_frames = 5
@@ -52,7 +49,6 @@ class DynamicGestureRecognizer:
         if len(self.velocity_buffer) < self.sequence_length:
             return False, "none"
             
-        # Calculate total motion and its components
         horizontal_motion = sum(v[0] for v in self.velocity_buffer)
         vertical_motion = sum(v[1] for v in self.velocity_buffer)
         total_motion = sum(v[0] + v[1] for v in self.velocity_buffer)
@@ -73,7 +69,7 @@ class DynamicGestureRecognizer:
         
     def _check_swipe_pattern(self, positions: np.ndarray) -> Optional[DynamicGestureType]:
         """Enhanced swipe detection with direction validation."""
-        if len(positions) < 10:  # Need minimum points for swipe
+        if len(positions) < 10: 
             return None
             
         # Calculate total horizontal and vertical movement
@@ -93,16 +89,13 @@ class DynamicGestureRecognizer:
         if len(positions) < self.circle_min_points:
             return 0.0
             
-        # Center the positions
         centered = positions - positions.mean(axis=0)
-        
-        # Calculate radius for each point
+
         radii = np.linalg.norm(centered, axis=1)
         mean_radius = np.mean(radii)
         
-        # Check if points maintain consistent distance from center
         radius_variation = np.std(radii) / mean_radius
-        if radius_variation > 0.4:  # Allow more variation in radius
+        if radius_variation > 0.4: 
             return 0.0
             
         # Calculate angles and their changes
@@ -116,10 +109,9 @@ class DynamicGestureRecognizer:
         total_angle = np.abs(np.sum(angle_diffs))
         
         # Check for minimum rotation (at least 270 degrees)
-        if total_angle < 4.7:  # 4.7 radians ≈ 270 degrees
+        if total_angle < 4.7: 
             return 0.0
             
-        # Calculate direction consistency
         direction_changes = np.diff(np.sign(angle_diffs))
         direction_consistency = 1.0 - (np.count_nonzero(direction_changes) / len(direction_changes))
         
@@ -141,8 +133,7 @@ class DynamicGestureRecognizer:
         self.velocity_buffer.append((dx, dy))
         if len(self.velocity_buffer) > self.sequence_length:
             self.velocity_buffer.pop(0)
-            
-        # Store landmarks
+
         self.landmark_buffer.append(landmarks)
         if len(self.landmark_buffer) > self.sequence_length:
             self.landmark_buffer.pop(0)
@@ -157,7 +148,6 @@ class DynamicGestureRecognizer:
         positions = np.array([[landmarks[0].x, landmarks[0].y] 
                             for landmarks in self.landmark_buffer])
         
-        # Check each gesture type with confidence
         confidences = {
             DynamicGestureType.NONE: 0.0
         }
@@ -183,7 +173,6 @@ class DynamicGestureRecognizer:
         else:
             self.gesture_count = 0
         
-        # Only switch gestures if new gesture is significantly more confident
         if (best_gesture[1] > self.motion_confidence_threshold and 
             (best_gesture[0] == self.prev_gesture or 
              best_gesture[1] > confidences.get(self.prev_gesture, 0) + 0.2)):
@@ -191,7 +180,6 @@ class DynamicGestureRecognizer:
             self.prev_gesture = best_gesture[0]
             return DynamicGestureResult(best_gesture[0], best_gesture[1])
         
-        # Keep previous gesture if it was stable
         if self.gesture_count >= self.min_consistent_frames:
             prev_conf = confidences.get(self.prev_gesture, 0)
             if prev_conf > self.motion_confidence_threshold * 0.8:
@@ -203,31 +191,24 @@ class EnhancedTestServer:
     def __init__(self):
         self.pipeline = None
         self.config = rs.config()
-        
-        # Initialize filters
+
         self.spatial_filter = rs.spatial_filter()
         self.temporal_filter = rs.temporal_filter()
         
-        # Configure spatial filter
         self.spatial_filter.set_option(rs.option.filter_magnitude, 2)
         self.spatial_filter.set_option(rs.option.filter_smooth_alpha, 0.5)
         self.spatial_filter.set_option(rs.option.filter_smooth_delta, 20)
-        
-        # Initialize other components
+
         self.depth_kalman = DepthKalmanFilter()
         self.hand_detector = HandDetector(max_hands=1)
         self.gesture_classifier = GestureClassifier()
         self.dynamic_gesture_recognizer = DynamicGestureRecognizer()
 
-        # Debug flags
         self.show_debug_info = True
 
-        # Recording variables
         self.is_recording = False
         self.realsense_recorder = None
         
-        # Get the project root directory (2 levels up from tests)
-        import os
         self.project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         self.recording_path = os.path.join(self.project_root, "recordings")
         print(f"Recording path set to: {self.recording_path}")
@@ -239,22 +220,19 @@ class EnhancedTestServer:
         from datetime import datetime
         
         try:
-            # Create recordings directory if it doesn't exist
             if not os.path.exists(self.recording_path):
                 os.makedirs(self.recording_path)
-                
-            # Generate filename with timestamp
+
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             video_path = os.path.join(self.recording_path, f"realsense_{timestamp}.mp4")
             
-            # Initialize video writer with MP4V codec - widely supported
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Use MP4V codec
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')  
             self.realsense_recorder = cv2.VideoWriter(
                 video_path,
                 fourcc,
-                30.0,  # FPS
-                (640, 480),  # Frame size
-                isColor=True  # Color video
+                30.0,  
+                (640, 480),  
+                isColor=True  
             )
             
             if not self.realsense_recorder.isOpened():
@@ -273,18 +251,14 @@ class EnhancedTestServer:
         """Handle recording of a frame"""
         if self.is_recording and self.realsense_recorder is not None:
             try:
-                # Ensure image is in BGR format (OpenCV default)
-                if len(color_image.shape) == 2:  # If grayscale
-                    color_image = cv2.cvtColor(color_image, cv2.COLOR_GRAY2BGR)
-                    
-                # Add recording indicator
-                frame_to_save = color_image.copy()
                 
-                # Write the frame
+                if len(color_image.shape) == 2:  
+                    color_image = cv2.cvtColor(color_image, cv2.COLOR_GRAY2BGR)
+                frame_to_save = color_image.copy()
+
                 self.realsense_recorder.write(frame_to_save)
                 self.frame_count += 1
                 
-                # Add recording indicator to display (not saved)
                 cv2.circle(color_image, (30, 30), 15, (0, 0, 255), -1)
                 cv2.putText(
                     color_image,
@@ -314,11 +288,9 @@ class EnhancedTestServer:
         font = cv2.FONT_HERSHEY_SIMPLEX
         scale = 0.7
         thickness = 2
-        
-        # Get text size
+
         (text_width, text_height), _ = cv2.getTextSize(text, font, scale, thickness)
-        
-        # Draw background rectangle
+
         cv2.rectangle(
             image,
             (10, y_offset - text_height - 5),
@@ -326,8 +298,7 @@ class EnhancedTestServer:
             (0, 0, 0),
             -1
         )
-        
-        # Draw text
+
         cv2.putText(
             image,
             text,
@@ -377,7 +348,7 @@ class EnhancedTestServer:
             if self.pipeline is not None:
                 self.pipeline.stop()
             
-            self.pipeline = rs.pipeline()  # Create new pipeline
+            self.pipeline = rs.pipeline() 
             self.config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
             self.config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
             print("Starting RealSense pipeline...")
@@ -410,7 +381,6 @@ class EnhancedTestServer:
             }))
             return
 
-        # Start recording automatically
         print("Initializing recording...")
         if self.initialize_recorder():
             self.is_recording = True
@@ -453,7 +423,6 @@ class EnhancedTestServer:
                             smoothed_depth
                         )
 
-                        # Calculate finger states
                         finger_states = self._calculate_finger_states(hands[0])
                         
                         message.update({
@@ -470,7 +439,6 @@ class EnhancedTestServer:
                             "dynamic_gesture_confidence": dynamic_gesture.confidence    
                         })
                         
-                        # Draw debug visualization
                         y_offset = 30
                         
                         if self.show_debug_info:
@@ -481,14 +449,12 @@ class EnhancedTestServer:
                                 f"Gesture: {gesture_result.gesture_type.name} ({gesture_result.confidence:.2f})"
                             )
                             
-                            # Show dynamic gesture info
                             y_offset = self.draw_debug_info(
                                 color_image,
                                 y_offset,
                                 f"Dynamic: {dynamic_gesture.gesture_type.name} ({dynamic_gesture.confidence:.2f})"
                             )
                             
-                            # Show velocity info if available
                             if hasattr(self.dynamic_gesture_recognizer, 'velocity_buffer') and \
                                len(self.dynamic_gesture_recognizer.velocity_buffer) > 0:
                                 dx, dy = self.dynamic_gesture_recognizer.velocity_buffer[-1]
@@ -498,7 +464,6 @@ class EnhancedTestServer:
                                     f"Velocity - dx: {dx:.3f}, dy: {dy:.3f}"
                                 )
 
-                        # Draw hand landmarks
                         color_image = self.hand_detector.draw_landmarks(
                             color_image, 
                             hands,
@@ -506,7 +471,6 @@ class EnhancedTestServer:
                             dynamic_gesture
                         )
                         
-                        # Draw final prediction if confidence is high
                         if dynamic_gesture.confidence > 0.7:
                             self.draw_debug_info(
                                 color_image,
@@ -514,15 +478,12 @@ class EnhancedTestServer:
                                 f"Detected: {dynamic_gesture.gesture_type.name}",
                                 color=(0, 255, 0)
                             )
-                    
-                    # Send data to Unity
+
                     await websocket.send(json.dumps(message))
                     self.handle_recording(color_image)
 
-                    # Show video feed
                     cv2.imshow('Hand Tracking', color_image)
-                    
-                    # Simple quit with 'q'
+
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
 

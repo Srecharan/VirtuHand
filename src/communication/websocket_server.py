@@ -14,7 +14,6 @@ class GestureWebSocketServer:
         
     async def send_gesture_data(self, websocket, gesture_result):
         """Send gesture data to Unity client."""
-        # Convert gesture data to JSON-compatible format
         gesture_data = {
             "gesture_type": gesture_result.gesture_type.name,
             "confidence": gesture_result.confidence,
@@ -36,9 +35,7 @@ class GestureWebSocketServer:
         print(f"New client connected from {websocket.remote_address}")
         try:
             while True:
-                # Keep connection alive and handle any incoming messages
                 message = await websocket.recv()
-                # Process any incoming messages from Unity if needed
                 print(f"Received message from Unity: {message}")
         except websockets.exceptions.ConnectionClosed:
             print("Client disconnected")

@@ -34,16 +34,13 @@ class RealSenseCamera:
         self.width = width
         self.height = height
         self.fps = fps
-        
-        # Initialize RealSense pipeline
+
         self.pipeline = rs.pipeline()
         self.config = rs.config()
-        
-        # Enable streams
+
         self.config.enable_stream(rs.stream.color, width, height, rs.format.bgr8, fps)
         self.config.enable_stream(rs.stream.depth, width, height, rs.format.z16, fps)
         
-        # Align depth to color frame
         self.align = rs.align(rs.stream.color)
         
     def start(self) -> bool:
@@ -68,10 +65,8 @@ class RealSenseCamera:
             FrameData object containing color and depth frames
         """
         try:
-            # Wait for a coherent pair of frames
             frames = self.pipeline.wait_for_frames()
             
-            # Align the depth frame to color frame
             aligned_frames = self.align.process(frames)
             
             # Get aligned frames

@@ -3,10 +3,9 @@ import pyrealsense2 as rs
 
 class DepthKalmanFilter:
     def __init__(self):
-        # Initialize state (position and velocity)
         self.state = np.array([0.0, 0.0])
-        self.P = np.eye(2) * 1000  # High initial uncertainty
-        
+        self.P = np.eye(2) * 1000  
+
         # Process noise
         self.Q = np.array([[0.1, 0.0],
                           [0.0, 0.1]])
@@ -15,7 +14,7 @@ class DepthKalmanFilter:
         self.R = np.array([[0.1]])
         
         # Time step
-        self.dt = 1.0/30.0  # Assuming 30 FPS
+        self.dt = 1.0/30.0  
         
     def update(self, measurement):
         # Predict
@@ -33,4 +32,4 @@ class DepthKalmanFilter:
         self.state = self.state + K @ y
         self.P = (np.eye(2) - K @ H) @ self.P
         
-        return self.state[0]  # Return filtered position
+        return self.state[0]  

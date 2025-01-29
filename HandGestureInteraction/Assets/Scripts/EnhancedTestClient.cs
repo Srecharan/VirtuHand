@@ -27,7 +27,6 @@ public class EnhancedTestClient : MonoBehaviour
     public GameObject statusCube;
     public GameObject handIndicator;
     
-    // Increased movement multipliers
     private readonly float xMultiplier = 30f;
     private readonly float yMultiplier = 30f;
     private readonly float zMultiplier = 50f;
@@ -108,17 +107,14 @@ public class EnhancedTestClient : MonoBehaviour
             {
                 isHandDetected = true;
                 
-                // Get palm center (landmark 0 is the wrist)
                 HandLandmark wrist = data.hand_landmarks[0][0];
                 
-                // Calculate new position
                 Vector3 newPosition = new Vector3(
                     (wrist.x - 0.5f) * xMultiplier,
                     (wrist.y - 0.5f) * yMultiplier,
                     (1.0f - wrist.z) * zMultiplier  // Invert Z for more intuitive movement
                 );
 
-                // Add offset to keep object in view
                 newPosition += initialPosition;
                 
                 targetPosition = newPosition;

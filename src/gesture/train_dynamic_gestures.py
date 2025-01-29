@@ -19,19 +19,16 @@ class HandGestureDataCollector:
     def __init__(self, save_dir="dataset/dynamic_gestures"):
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Initialize RealSense camera
+
         self.pipeline = rs.pipeline()
         self.config = rs.config()
         self.config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
         self.config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-        
-        # Initialize hand detector
+
         self.hand_detector = HandDetector(max_hands=1)
-        
-        # Initialize gesture sequences
+
         self.current_sequence = []
-        self.sequence_length = 30  # 1 second at 30 FPS
+        self.sequence_length = 30  
         
     def collect_data(self):
         """Collect training data for dynamic gestures"""
@@ -88,8 +85,7 @@ class HandGestureDataCollector:
     def record_sequence(self, sequence_num, gesture_type):
         """Record a single gesture sequence"""
         sequence = []
-        
-        # Countdown before recording
+
         preview_image = None
         for countdown in range(3, 0, -1):
             frames = self.pipeline.wait_for_frames()
@@ -97,7 +93,6 @@ class HandGestureDataCollector:
             
             if color_frame:
                 preview_image = np.asanyarray(color_frame.get_data())
-                # Add big countdown number
                 cv2.putText(preview_image, 
                         str(countdown), 
                         (preview_image.shape[1]//2 - 50, preview_image.shape[0]//2),
@@ -108,8 +103,7 @@ class HandGestureDataCollector:
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                 cv2.imshow('Recording', preview_image)
                 cv2.waitKey(1000)  # Wait 1 second between countdown numbers
-        
-        # Show "RECORDING NOW!" for 0.5 seconds
+
         if preview_image is not None:
             cv2.putText(preview_image,
                     "RECORDING NOW!",
@@ -120,8 +114,7 @@ class HandGestureDataCollector:
 
         print(f"\nRecording {gesture_type.name} - Sequence {sequence_num + 1}/20")
         start_time = time.time()
-        
-        # Recording loop
+
         progress_bar_length = 30
         while len(sequence) < self.sequence_length:
             frames = self.pipeline.wait_for_frames()
@@ -133,12 +126,10 @@ class HandGestureDataCollector:
                 
             color_image = np.asanyarray(color_frame.get_data())
             depth_image = np.asanyarray(depth_frame.get_data())
-            
-            # Detect hand landmarks
+
             hands = self.hand_detector.detect_hands(color_image, depth_image)
             
             if hands:
-                # Extract landmark positions
                 landmarks = hands[0].landmarks
                 landmark_data = {str(idx): [lm.x, lm.y, lm.z] for idx, lm in landmarks.items()}
                 sequence.append(landmark_data)
@@ -148,7 +139,6 @@ class HandGestureDataCollector:
                 filled_length = int(progress_bar_length * progress)
                 progress_bar = '=' * filled_length + '-' * (progress_bar_length - filled_length)
                 
-                # Visualize recording with enhanced feedback
                 annotated_image = self.hand_detector.draw_landmarks(color_image, hands)
                 cv2.putText(annotated_image, 
                         f"Recording {gesture_type.name} - Sequence {sequence_num + 1}/20", 
@@ -163,7 +153,6 @@ class HandGestureDataCollector:
                 if key == 27:  # ESC
                     return None
                     
-        # Show "RECORDED!" for 1 second
         if len(sequence) == self.sequence_length:
             cv2.putText(annotated_image,
                     "RECORDED SUCCESSFULLY!",
@@ -213,7 +202,7 @@ class DynamicGestureDataset(Dataset):
         sequence_tensor = []
         for frame in sequence:
             landmarks = []
-            for i in range(21):  # 21 hand landmarks
+            for i in range(21): 
                 if str(i) in frame:
                     landmarks.extend(frame[str(i)])
                 else:
@@ -226,7 +215,6 @@ def train_model(model, train_loader, val_loader, num_epochs=50):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     
-    # Print dataset info
     print(f"Training on device: {device}")
     print(f"Number of training batches: {len(train_loader)}")
     print(f"Number of validation batches: {len(val_loader)}")
@@ -246,7 +234,6 @@ def train_model(model, train_loader, val_loader, num_epochs=50):
             sequences = sequences.to(device)
             labels = labels.to(device)
             
-            # Debug info
             if batch_idx == 0:
                 print(f"\nSequences shape: {sequences.shape}")
                 print(f"Labels shape: {labels.shape}")
@@ -265,7 +252,6 @@ def train_model(model, train_loader, val_loader, num_epochs=50):
             
         train_acc = 100.0 * correct / total
         
-        # Validation
         model.eval()
         val_loss = 0.0
         correct = 0
@@ -289,7 +275,6 @@ def train_model(model, train_loader, val_loader, num_epochs=50):
         print(f"Epoch {epoch+1}: Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%, "
               f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%")
         
-        # Save best model
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(model.state_dict(), "models/best_dynamic_gesture_model.pth")
@@ -306,19 +291,16 @@ def main():
         print("Invalid choice. Please enter 1 or 2.")
 
     if choice == '2':
-        # Record new data
         collector = HandGestureDataCollector()
         collector.collect_data()
     else:
         print("\nUsing existing recorded data...")
         
-    # Check if we have enough data to proceed
     dataset_path = Path("dataset/dynamic_gestures")
     if not dataset_path.exists():
         print("Error: No dataset found at", dataset_path)
         return
-        
-    # Count existing sequences
+
     gesture_counts = {}
     for gesture_dir in dataset_path.iterdir():
         if gesture_dir.is_dir():
@@ -333,7 +315,6 @@ def main():
     if proceed.lower() != 'y':
         return
     
-    # Prepare dataset
     print("\nPreparing dataset...")
     dataset = DynamicGestureDataset("dataset/dynamic_gestures")
     
@@ -350,7 +331,6 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=32)
     
-    # Create and train model
     print("\nStarting model training...")
     model = GRUGestureModel()
     train_model(model, train_loader, val_loader)

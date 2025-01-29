@@ -7,7 +7,7 @@ public class TestWebSocket : MonoBehaviour
     WebSocket websocket;
     bool isConnected = false;
     
-    // Reference to your cube that we'll use as a visual indicator
+
     public GameObject statusCube;
 
     async void Start()
@@ -25,15 +25,15 @@ public class TestWebSocket : MonoBehaviour
             Debug.Log("Received camera data: " + message);
             
             try {
-                // Parse the JSON message into our CameraStatus class
+                
                 CameraStatus status = JsonUtility.FromJson<CameraStatus>(message);
                 
-                // Update our visual indicator if we have one
+               
                 if (statusCube != null) {
-                    // Get the cube's renderer and change its color
+                   
                     Renderer cubeRenderer = statusCube.GetComponent<Renderer>();
                     if (cubeRenderer != null) {
-                        // Set to green if camera is active, red if not
+                       
                         cubeRenderer.material.color = status.camera_active ? Color.green : Color.red;
                     }
                 }
@@ -75,7 +75,6 @@ public class TestWebSocket : MonoBehaviour
     }
 }
 
-// This class needs to match the structure of our JSON message from Python
 [Serializable]
 public class CameraStatus
 {

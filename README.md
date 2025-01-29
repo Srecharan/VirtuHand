@@ -6,197 +6,221 @@
 ![TensorFlow](https://img.shields.io/badge/tensorflow-2.13.1-orange.svg)
 ![OpenCV](https://img.shields.io/badge/opencv-4.9.0-red.svg)
 
-VirtuHand is a sophisticated real-time hand gesture recognition system implementing a hybrid architecture combining classical computer vision techniques with deep learning approaches. The system utilizes Intel RealSense D435i's depth sensing capabilities enhanced by Kalman filtering for precise 3D tracking, while incorporating both MediaPipe-based gesture recognition and experimental ONNX neural network implementations for robust hand detection and tracking.
+## Overview
 
-## Demo Video
-[![VirtuHand Demo](https://img.youtube.com/vi/eRFWZjJbcgI/maxresdefault.jpg)](https://youtu.be/eRFWZjJbcgI)
+VirtuHand is a sophisticated real-time hand gesture recognition system implementing a hybrid architecture that combines classical computer vision with deep learning approaches. The system leverages Intel RealSense D435i's depth sensing capabilities enhanced by Extended Kalman filtering for precise 3D tracking, while incorporating both MediaPipe-based gesture recognition and experimental ONNX neural network implementations for robust hand detection and pose estimation.
 
-
-
-### Quick Demo Preview
-![Gesture Demo](assets/demo_gesture.gif)
+### Interactive Demo: Virtual Flower Arrangement
 ![Full Demo](assets/full_demo_gesture.gif)
 
-### Key Demo Features
-The demo showcases:
-- Real-time hand tracking using Intel RealSense D435i
-- Dynamic gesture recognition with temporal analysis
-- Physics-based interactions in Unity environment
-- Seamless object manipulation (grab, move, place)
-- Real-time swipe gesture controls
-- Day/Night cycle control using pinch gestures
-- Position-aware snapping system for flower arrangement
+*📌 For full quality, watch the video on [YouTube](https://youtu.be/eRFWZjJbcgI)*
 
-## Technical Stack
-Core Technologies
-
-Depth Sensing: Intel RealSense D435i with custom depth filtering
-State Estimation: Extended Kalman Filter for 3D position refinement
-Neural Networks: MediaPipe Hand Tracking + ONNX runtime optimization
-Real-time Communication: WebSocket-based client-server architecture
-
-Key Components
-
-Depth Processing Pipeline
-
-RealSense SDK integration (pyrealsense2)
-Multi-stage depth filtering
-Kalman filter-based depth smoothing
-Custom depth-aware gesture recognition
+### Hand Articulation & Rigging Demo
+![Hand Rigging](assets/hand_rig.gif)
 
 
-Neural Network Implementation
+## Core Features
 
-ONNX model conversion and optimization
-Unity Barracuda engine integration
-Real-time tensor preprocessing
-GPU-accelerated inference pipeline
+### Advanced Hand Tracking & Depth Sensing
+- **Depth Camera Integration**:
+  - Intel RealSense D435i depth sensor (30 FPS, 640x480)
+  - Multi-stage depth filtering pipeline
+  - Sub-millimeter precision in optimal conditions
+  - Custom depth data preprocessing and normalization
 
+- **Extended Kalman Filter Implementation**:
+  - 2D state vector (position, velocity) estimation
+  - Optimized measurement and process noise matrices
+  - Dynamic time-step handling (30Hz update rate)
+  - Custom covariance tuning for hand motion characteristics
+  - Advanced outlier rejection for robust tracking
 
-Gesture Recognition System
+- **3D Position Tracking**:
+  - MediaPipe hand landmark detection (21 keypoints)
+  - Palm center calculation using weighted landmark averaging
+  - Geometric handedness determination using cross-product analysis
+  - Quaternion-based rotation tracking with Kalman smoothing
+  - Real-time coordinate space transformation
 
-Static gesture classification (GRAB, OPEN_PALM, PINCH, POINT)
-Dynamic gesture detection using temporal analysis
-Custom-trained sequence models
-Real-time confidence scoring
+### Static Gesture Recognition System
+- **Geometric Analysis Pipeline**:
+  - Joint angle calculation using landmark triplets
+  - Adaptive finger state detection with angle thresholds
+  - Palm orientation analysis using normal vectors
+  - Real-time confidence scoring system
 
+- **Supported Gestures**:
+  - GRAB: Finger curl analysis with palm-relative distances
+  - OPEN_PALM: Extended finger validation with strict thresholds
+  - PINCH: Precision thumb-index distance monitoring
+  - POINT: Index extension with others closed detection
 
-Unity Integration
+### Dynamic Gesture Recognition System
+- **Custom Training Pipeline**:
+  - Dataset: 20 sequences per gesture, 30 frames each
+  - GRU architecture (input:63, hidden:32, layers:2)
+  - Real-time sequence buffer management
+  - Custom data augmentation for rotation invariance
 
-WebSocket-based real-time data streaming
-Custom shader implementation
-Physics-based interaction system
-Dynamic animation control
+- **Motion Pattern Analysis**:
+  - Velocity component extraction (dx, dy)
+  - Horizontal/vertical motion ratio analysis
+  - Specialized pattern detectors:
+    - SWIPE: Direction and magnitude validation
+    - CIRCLE: Rotation and shape consistency checking
+    - WAVE: Peak-valley detection with amplitude analysis
 
-## Key Features
+- **Performance Metrics**:
+  - Recognition latency: <33ms
+  - Gesture confidence threshold: 0.6
+  - Minimum sequence length: 30 frames
+  - Real-time smoothing with 5-frame minimum consistency
 
-- **Real-time Hand Tracking**
-  - Sub-millimeter accurate tracking using RealSense D435i
-  - Full 3D position and orientation mapping
-  - Robust finger joint tracking and gesture recognition
+![Gesture Recognition](assets/gesture.gif)
+*Demonstration of supported gesture recognition*
 
-- **Dynamic Gesture Recognition**
-  - Custom-trained models for dynamic gesture detection
-  - Supports swipe gestures with natural motion physics
-  - Real-time gesture confidence scoring
-  - Hand velocity and trajectory analysis
+### Neural Network Integration (Experimental)
+- **ONNX-Based Hand Detection**:
+  - Attempted replacement of MediaPipe's hand detection pipeline with ONNX models
+  - Two-stage detection system:
+    - Palm Detection (192x192 input)
+    - Hand Landmark Detection (224x224 input)
+  - Unity Barracuda engine integration for GPU acceleration
+  - Custom tensor preprocessing pipeline
+  - FP16 quantization for model optimization
+- **Performance Targets**:
+  - Palm Detection: 8-10ms inference time
+  - Hand Landmark: 12-15ms inference time
+  - Overall pipeline latency: < 33ms (30+ FPS)
+  - Memory footprint: ~150MB during runtime
 
-- **Static Gesture Recognition**
-  - Four primary gestures: GRAB, OPEN_PALM, PINCH, POINT
-  - High-precision finger state detection
-  - Kalman filtering for smooth tracking
-
-- **Interactive Demo Environment**
-  - Real-time physics-based interactions
-  - Natural object manipulation (grab, move, place)
-  - Dynamic environment controls (day/night cycle)
-  - Position-aware object snapping system
+### Real-time Communication System
+- **WebSocket Protocol**:
+  - Asynchronous bidirectional communication
+  - Custom JSON message protocol for gesture data
+  - Optimized packet size (< 1KB per frame)
+  - Auto-reconnection with exponential backoff
+  - Ping-pong disabled for reduced latency
+- **Data Flow**:
+  - Hand position/rotation (30Hz)
+  - Gesture classifications (real-time)
+  - Joint angles for hand model
+  - Dynamic gesture events
 
 ## Technical Architecture
 
-### Core Pipeline
+### System Architecture
 ```
-RealSense D435i → Python Backend → WebSocket Server → Unity Frontend
-                    ↓
-            Gesture Processing
-                    ↓
-         Position/Depth Mapping
+RealSense D435i Camera
+       ↓
+[Python Backend]
+   ├─── Hand Detection (MediaPipe)
+   ├─── Depth Processing (Kalman Filter)
+   ├─── Gesture Recognition
+   │    ├─── Static Gesture Detection
+   │    │    └─── Geometric Analysis
+   │    └─── Dynamic Gesture Detection
+   │         ├─── GRU Model
+   │         └─── Motion Pattern Analysis
+   └─── WebSocket Server
+           ↓
+[Unity Frontend]
+   ├─── WebSocket Client
+   ├─── Hand Model & Joint System
+   ├─── Flower Arrangement System
+   └─── Physics Interaction System
+         └─── Snapping & Animation
+
+Real-time Data Flow:
+Camera Feed → Detection → Processing → WebSocket → Unity Render
+(30+ FPS)    (10-15ms)   (5-8ms)     (~1ms)      (16.6ms)
 ```
-
-### Neural Network Pipeline (Experimental)
-```
-Image Input → Palm Detection (192x192) → Hand Landmark Detection (224x224)
-              ↓                          ↓
-        ONNX Runtime              Barracuda Engine
-              ↓                          ↓
-        Gesture Classification    3D Position Mapping
-```
-
-## Implementation Details
-
-### Hand Tracking and Gesture Recognition
-- Custom MediaPipe integration for initial hand detection
-- Dynamic gesture recognition using temporal sequence analysis
-- Kalman filtering for depth and position smoothing
-- WebSocket-based real-time communication protocol
-
-### Neural Network Integration
-- ONNX model conversion pipeline for optimized inference
-- Unity Barracuda integration for GPU acceleration
-- Custom tensor preprocessing for real-time performance
-- Experimental edge computing capabilities
-
-### Custom Training Pipeline
-- Manually collected dataset for dynamic gestures
-- Custom training pipeline for gesture sequence recognition
-- Data augmentation and preprocessing workflows
-- Model validation and performance optimization
 
 ### Unity Integration
-- Custom shader development for hand visualization
-- Physics-based interaction system
-- Real-time gesture-based animation system
-- Advanced object manipulation and snapping system
+- **Hand Model**: Fully articulated hand model with inverse kinematics
+- **Real-time Physics**: Dynamic object interaction and collision detection
+- **Custom Shaders**: Advanced material rendering and effects
+- **WebSocket Communication**: Low-latency data streaming protocol
 
-## Technical Requirements
+## Installation and Usage
 
-### Hardware
-- Intel RealSense D435i Camera
-- CUDA-capable GPU (for neural network pipeline)
-- 16GB RAM recommended
-
-### Software
-- Python 3.8+
-- Unity 2022.3.5f1
-- CUDA 11.2 & cuDNN 8.9
-- See `environment.yml` for complete dependencies
-
-## Installation
-
-1. **Environment Setup**
+1. **Clone the Repository**
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/VirtuHand.git
+git clone https://github.com/Srecharan/VirtuHand.git
 cd VirtuHand
-
-# Create conda environment
-conda env create -f environment.yml
-conda activate virtuhand
 ```
 
 2. **Unity Setup**
-- Open the project in Unity 2022.3.5f1
-- Import required packages from Package Manager
-- Open HandGestureTest2 scene
-- Configure RealSense camera settings
+   - Download and install Unity 2022.3.5f1
+   - Import required packages from Package Manager:
+     - Native WebSocket
+     - Barracuda
+     - Intel RealSense SDK
+   - Choose one of the following options:
+     - Open the existing HandGestureTest2 scene from the project
+     - Create a new scene and import objects from project assets
+     - Create a new scene and import assets from Unity Asset Store
 
-3. **Start the Application**
+3. **Run the Backend**
 ```bash
-# Start the Python backend
-python test_server.py
+# Navigate to project directory
+cd VirtuHand
 
-# Run Unity scene
+# Start the Python server
+python test_server.py
 ```
+
+**Important Notes:**
+- Hand Model Setup:
+  - Ensure proper rigging of all finger joints (21 points)
+  - Each joint should have proper rotation constraints
+  - Thumb requires special attention for natural movement
+  - Configure inverse kinematics for realistic hand movement
+- Script Attachment:
+  - Attach HandGestureController.cs to the hand model
+  - Configure WebSocket connection parameters
+  - Set up gesture detection thresholds
+- Camera Setup:
+  - Position Intel RealSense D435i camera at appropriate height
+  - Ensure proper lighting for optimal tracking
 
 ## Project Structure
 ```
 VirtuHand/
 ├── src/
-│   ├── gesture/          # Gesture recognition modules
-│   ├── camera/           # Camera handling
-│   └── communication/    # WebSocket implementation
+│   ├── camera/
+│   │   └── realsense.py          # RealSense camera interface
+│   ├── communication/
+│   │   └── websocket_server.py   # WebSocket implementation
+│   ├── gesture/
+│   │   ├── classifier.py         # Static gesture recognition
+│   │   ├── detector.py          # Hand detection & tracking
+│   │   ├── dynamic_gesture.py   # Dynamic gesture system
+│   │   ├── depth_utils.py       # Depth processing
+│   │   └── train_dynamic_gestures.py  # Training pipeline
+│   └── utils/
+│       └── visualization.py      # Debug visualization
 ├── HandGestureInteraction/
-│   ├── Assets/
-│   │   ├── Scripts/      # Unity C# scripts
-│   │   └── Scenes/       # Unity scenes
-├── models/               # Trained models
-└── tests/               # Test scripts
+│   └── Assets/
+│       └── Scripts/
+│           ├── HandGestureController.cs    # Main Unity controller
+│           ├── ONNXHandGestureController.cs # ONNX integration
+│           └── NeuralNetworkCreator.cs     # Model initialization
+├── models/
+│   └── best_dynamic_gesture_model.pth   # Trained GRU model
+├── dataset/
+│   └── dynamic_gestures/    # Training data
+├── model_export/
+│   ├── export_models.py     # ONNX conversion
+│   └── download_models.py   # Model management
+└── configs/                 # Configuration files
 ```
 
 ## Acknowledgments
+- [MediaPipe Hand Landmark Detection](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker) by Google
+- Unity Technologies and Unity Asset Store
 - Intel RealSense SDK
-- MediaPipe Framework
 - Unity ML-Agents
 
 ## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the LICENSE file for details

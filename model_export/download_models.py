@@ -22,7 +22,6 @@ def main():
     output_dir = create_output_directory()
     print(f"Output directory created at: {output_dir}")
     
-    # Updated MediaPipe model URLs
     model_urls = {
         'palm_detection.onnx': 'https://github.com/google/mediapipe/raw/master/mediapipe/modules/hand_landmark/hand_landmark_full.onnx',
         'hand_landmark.onnx': 'https://github.com/google/mediapipe/raw/master/mediapipe/modules/hand_landmark/hand_landmark_lite.onnx'

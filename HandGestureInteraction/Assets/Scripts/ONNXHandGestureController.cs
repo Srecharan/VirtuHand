@@ -8,22 +8,22 @@ using System;
 public class PalmDetectionSettings
 {
     public NNModel model;
-    public string inputName = "input";  // Updated from inspection
+    public string inputName = "input";  
     public string classificatorsOutputName = "classificators";
     public string regressorsOutputName = "regressors";
-    public int inputWidth = 256;  // Updated from 224
-    public int inputHeight = 256; // Updated from 224
+    public int inputWidth = 192;  
+    public int inputHeight = 192;
 }
 
 [System.Serializable]
 public class HandLandmarkSettings
 {
     public NNModel model;
-    public string inputName = "input_1";  // Updated from inspection
+    public string inputName = "input_1";  
     public string landmarkOutputName = "ld_21_3d";
     public string flagOutputName = "output_handflag";
-    public int inputWidth = 256;  // Updated from 224
-    public int inputHeight = 256; // Updated from 224
+    public int inputWidth = 224;  
+    public int inputHeight = 224; 
 }
 
 public class ONNXHandGestureController : MonoBehaviour
@@ -71,7 +71,6 @@ public class ONNXHandGestureController : MonoBehaviour
             config = new Config();
             colorizer = new Colorizer();
 
-            // Configure streams
             config.EnableStream(Stream.Color, 640, 480, Format.Rgb8, 30);
             config.EnableStream(Stream.Depth, 640, 480, Format.Z16, 30);
 
@@ -79,11 +78,9 @@ public class ONNXHandGestureController : MonoBehaviour
             pipeline.Start(config);
             Debug.Log("RealSense pipeline started successfully!");
 
-            // Initialize textures
             inputTexture = new Texture2D(640, 480, TextureFormat.RGB24, false);
             rawImagePixels = new byte[640 * 480 * 3];
 
-            // Log camera status
             Debug.Log("Camera initialized with resolution: 640x480");
         }
         catch (Exception e)
@@ -98,22 +95,18 @@ public class ONNXHandGestureController : MonoBehaviour
     {
         try
         {
-            // Validate models are assigned
             if (palmDetection.model == null || handLandmark.model == null)
             {
                 Debug.LogError("Models not assigned in inspector!");
                 return;
             }
 
-            // Load models
             var palmRuntime = ModelLoader.Load(palmDetection.model);
             var handRuntime = ModelLoader.Load(handLandmark.model);
             
-            // Create workers with default configuration
             palmDetectionWorker = WorkerFactory.CreateWorker(palmRuntime);
             handLandmarkWorker = WorkerFactory.CreateWorker(handRuntime);
 
-            // Validate model inputs/outputs
             Debug.Log("=== Palm Detection Model ===");
             Debug.Log("Expected input shape: [1, 3, 192, 192]");
             Debug.Log("Model inputs: " + string.Join(", ", palmRuntime.inputs));
@@ -163,12 +156,10 @@ public class ONNXHandGestureController : MonoBehaviour
     {
         try
         {
-            // Copy frame data to texture
             colorFrame.CopyTo(rawImagePixels);
             inputTexture.LoadRawTextureData(rawImagePixels);
             inputTexture.Apply();
 
-            // First, detect palm with 192x192 input
             using (var palmInput = PreprocessImage(inputTexture, true))
             {
                 if (palmInput == null)
@@ -181,7 +172,6 @@ public class ONNXHandGestureController : MonoBehaviour
                 var palmDetections = ProcessPalmDetections(palmDetectionWorker);
                 Debug.Log($"Detected {palmDetections.Count} palms");
 
-                // If palm detected, process landmarks with 224x224 input
                 if (palmDetections.Count > 0)
                 {
                     using (var handInput = PreprocessImage(inputTexture, false))
@@ -231,7 +221,6 @@ public class ONNXHandGestureController : MonoBehaviour
             {
                 if (scores[i] > confidenceThreshold)
                 {
-                    // Each box has 4 values: x, y, width, height
                     int boxIdx = i * 4;
                     float x = boxes[boxIdx];
                     float y = boxes[boxIdx + 1];
@@ -257,25 +246,20 @@ public class ONNXHandGestureController : MonoBehaviour
     {
         try 
         {
-            // Get dimensions from settings
             int targetWidth = forPalmDetection ? palmDetection.inputWidth : handLandmark.inputWidth;
             int targetHeight = forPalmDetection ? palmDetection.inputHeight : handLandmark.inputHeight;
 
-            // Use bilinear filtering for better quality
             RenderTexture rt = RenderTexture.GetTemporary(targetWidth, targetHeight, 0, RenderTextureFormat.ARGB32);
             rt.filterMode = FilterMode.Bilinear;
             Graphics.Blit(texture, rt);
             
-            // Create tensor with correct shape [1, height, width, 3]
             Tensor tensor = new Tensor(1, targetHeight, targetWidth, 3);
-            
-            // Read pixels efficiently
+
             RenderTexture.active = rt;
             Texture2D resizedTexture = new Texture2D(targetWidth, targetHeight, TextureFormat.RGB24, false);
             resizedTexture.ReadPixels(new Rect(0, 0, targetWidth, targetHeight), 0, 0);
             resizedTexture.Apply();
-            
-            // Get raw pixels and normalize in one pass
+
             Color32[] pixels = resizedTexture.GetPixels32();
             float[] tensorData = tensor.data.Download(tensor.shape);
             
@@ -283,8 +267,7 @@ public class ONNXHandGestureController : MonoBehaviour
             {
                 int baseIdx = i * 3;
                 Color32 color = pixels[i];
-                
-                // Normalize to [-1, 1] range
+
                 tensorData[baseIdx + 0] = (color.r / 255f - 0.5f) * 2.0f;
                 tensorData[baseIdx + 1] = (color.g / 255f - 0.5f) * 2.0f;
                 tensorData[baseIdx + 2] = (color.b / 255f - 0.5f) * 2.0f;
@@ -292,7 +275,6 @@ public class ONNXHandGestureController : MonoBehaviour
             
             tensor.data.Upload(tensorData, tensor.shape);
             
-            // Cleanup
             RenderTexture.ReleaseTemporary(rt);
             Destroy(resizedTexture);
             
@@ -358,12 +340,10 @@ public class ONNXHandGestureController : MonoBehaviour
     {
         if (showCameraFeed && inputTexture != null)
         {
-            // Draw the camera feed
             float width = Screen.width * displayScale;
             float height = width * (inputTexture.height / (float)inputTexture.width);
             GUI.DrawTexture(new Rect(0, 0, width, height), inputTexture);
 
-            // Debug information
             GUI.Label(new Rect(10, height + 10, 300, 20), 
                 $"Camera: {(pipeline != null ? "Connected" : "Not Connected")}");
             GUI.Label(new Rect(10, height + 30, 300, 20), 
@@ -390,14 +370,11 @@ public class ONNXHandGestureController : MonoBehaviour
     {
         if (!showCameraFeed || inputTexture == null) return;
 
-        // Calculate display dimensions
         float width = Screen.width * displayScale;
         float height = width * (inputTexture.height / (float)inputTexture.width);
-        
-        // Draw camera feed
+
         GUI.DrawTexture(new Rect(0, 0, width, height), inputTexture);
 
-        // Draw palm detection box if available
         if (debugPalmDetection.HasValue)
         {
             Rect scaledRect = new Rect(
@@ -406,16 +383,12 @@ public class ONNXHandGestureController : MonoBehaviour
                 debugPalmDetection.Value.width * width,
                 debugPalmDetection.Value.height * height
             );
-            
-            // Draw box outline
+
             DrawRect(scaledRect, Color.green, 2);
-            
-            // Draw confidence score
             string confidenceText = $"Confidence: {debugPalmConfidence:F2}";
             GUI.Label(new Rect(scaledRect.x, scaledRect.y - 20, 200, 20), confidenceText);
         }
 
-        // Draw performance metrics
         float y = height + 10;
         GUI.Label(new Rect(10, y, 300, 20), 
             $"Camera: {(pipeline != null ? "Connected" : "Not Connected")}");
@@ -424,7 +397,6 @@ public class ONNXHandGestureController : MonoBehaviour
         GUI.Label(new Rect(10, y + 40, 300, 20), 
             $"Hand Landmark: {(handLandmarkWorker != null ? "Running" : "Not Running")}");
         
-        // If landmarks are detected, draw them
         if (fingerJoints != null && fingerJoints.Count > 0)
         {
             DrawLandmarks(width, height);
@@ -437,7 +409,6 @@ public class ONNXHandGestureController : MonoBehaviour
         tex.SetPixel(0, 0, color);
         tex.Apply();
 
-        // Draw the lines
         GUI.DrawTexture(new Rect(position.x, position.y, position.width, thickness), tex);
         GUI.DrawTexture(new Rect(position.x, position.y, thickness, position.height), tex);
         GUI.DrawTexture(new Rect(position.x + position.width - thickness, position.y, thickness, position.height), tex);
@@ -453,7 +424,7 @@ public class ONNXHandGestureController : MonoBehaviour
             if (fingerJoints[i] != null)
             {
                 Vector3 screenPos = Camera.main.WorldToScreenPoint(fingerJoints[i].position);
-                if (screenPos.z > 0) // Only draw if point is in front of camera
+                if (screenPos.z > 0) 
                 {
                     float x = screenPos.x * (width / Screen.width);
                     float y = height - (screenPos.y * (height / Screen.height));

@@ -21,17 +21,17 @@ from dataclasses import dataclass
 @dataclass
 class HandLandmark:
     """Represents a single hand landmark with 3D coordinates."""
-    x: float  # x coordinate in image space (0 to 1)
-    y: float  # y coordinate in image space (0 to 1)
-    z: float  # z coordinate from depth sensor (in meters)
-    pixel_x: int  # x coordinate in pixel space
-    pixel_y: int  # y coordinate in pixel space
-    visibility: float  # MediaPipe landmark visibility score
+    x: float 
+    y: float  
+    z: float  
+    pixel_x: int  
+    pixel_y: int  
+    visibility: float  
 
 @dataclass
 class Hand:
     """Represents a detected hand with all its landmarks and metadata."""
-    landmarks: Dict[int, HandLandmark]  # Dictionary of landmarks by their index
+    landmarks: Dict[int, HandLandmark]  
     handedness: str  # 'Left' or 'Right'
     confidence: float  # Detection confidence score
     palm_center: Tuple[float, float, float]  # 3D position of palm center
@@ -52,11 +52,10 @@ class HandDetector:
             max_num_hands=max_hands,
             min_detection_confidence=min_detection_confidence,
             min_tracking_confidence=min_tracking_confidence,
-            model_complexity=1,  # Use more complex model since we have GPU
-            static_image_mode=False  # Dynamic tracking for better performance
+            model_complexity=1,  
+            static_image_mode=False  
         )
         
-        # Store previous frame's hand data for smoothing
         self.previous_hands: List[Hand] = []
         
     def _calculate_palm_center(self, landmarks: Dict[int, HandLandmark]) -> Tuple[float, float, float]:
@@ -103,8 +102,6 @@ class HandDetector:
         # Use cross product to determine thumb side
         cross_product = np.cross(palm_vector, thumb_vector)
         
-        # If cross product is positive, thumb is on right side (left hand)
-        # If negative, thumb is on left side (right hand)
         return "Left" if cross_product > 0 else "Right"
 
     def detect_hands(self, color_frame: np.ndarray, depth_frame: np.ndarray) -> List[Hand]:
@@ -186,7 +183,6 @@ class HandDetector:
                             hand.landmarks[end_idx].pixel_y)
                     cv2.line(annotated_image, start_point, end_point, (0, 255, 0), 2)
             
-            # Get and display gesture if classifier is provided
             if classifier:
                 gesture = classifier.classify_gesture(hand)
                 
@@ -209,7 +205,7 @@ class HandDetector:
                     self._draw_gesture_text(
                         annotated_image,
                         f"Dynamic: {dynamic_gesture_result.gesture_type.name}",
-                        (text_x, text_y - 30)  # Position above static gesture
+                        (text_x, text_y - 30)  
                     )
         
         return annotated_image
@@ -219,11 +215,9 @@ class HandDetector:
         font = cv2.FONT_HERSHEY_SIMPLEX
         scale = 0.8
         thickness = 2
-        
-        # Get text size
+
         (text_width, text_height), _ = cv2.getTextSize(text, font, scale, thickness)
         
-        # Draw background rectangle
         cv2.rectangle(
             image,
             (position[0] - 5, position[1] - text_height - 5),
@@ -232,7 +226,6 @@ class HandDetector:
             -1
         )
         
-        # Draw text
         cv2.putText(
             image,
             text,
@@ -300,8 +293,6 @@ class HandRotationTracker:
         
         # Apply Kalman filtering
         filtered_quaternion = self.rotation_filter.update(quaternion)
-        
-        # Store for next frame
         self.prev_quaternion = filtered_quaternion
         
         return filtered_quaternion
@@ -353,17 +344,15 @@ class HandRotationTracker:
 
 class RotationKalmanFilter:
     def __init__(self):
-        self.state = np.array([1.0, 0.0, 0.0, 0.0])  # Initial quaternion (no rotation)
-        self.P = np.eye(4) * 0.1  # State covariance
-        self.Q = np.eye(4) * 0.01  # Process noise
-        self.R = np.eye(4) * 0.1   # Measurement noise
+        self.state = np.array([1.0, 0.0, 0.0, 0.0])  
+        self.P = np.eye(4) * 0.1  
+        self.Q = np.eye(4) * 0.01  
+        self.R = np.eye(4) * 0.1   
         
     def update(self, measurement):
         # Predict
         # For quaternions, prediction is identity since we assume constant orientation
         
-        # Update
-        # Innovation
         y = measurement - self.state
         
         # Normalize quaternion difference
@@ -400,7 +389,6 @@ def test_hand_detector():
                     continue
                 
                 try:
-                    # Detect hands
                     hands = detector.detect_hands(frame_data.color, frame_data.depth)
                     
                     # Classify gestures for each hand
