@@ -9,9 +9,19 @@
 VirtuHand is a sophisticated real-time hand gesture recognition system implementing a hybrid architecture combining classical computer vision techniques with deep learning approaches. The system utilizes Intel RealSense D435i's depth sensing capabilities enhanced by Kalman filtering for precise 3D tracking, while incorporating both MediaPipe-based gesture recognition and experimental ONNX neural network implementations for robust hand detection and tracking.
 
 ## Demo Video
-![VirtuHand Demo](assets/flower_bouquet_c.mp4)
+[![VirtuHand Demo](https://img.youtube.com/vi/1NBSyJV4o34/maxresdefault.jpg)](https://youtu.be/1NBSyJV4o34)
 
-Technical Stack
+### Key Demo Features
+The demo showcases:
+- Real-time hand tracking using Intel RealSense D435i
+- Dynamic gesture recognition with temporal analysis
+- Physics-based interactions in Unity environment
+- Seamless object manipulation (grab, move, place)
+- Real-time swipe gesture controls
+- Day/Night cycle control using pinch gestures
+- Position-aware snapping system for flower arrangement
+
+## Technical Stack
 Core Technologies
 
 Depth Sensing: Intel RealSense D435i with custom depth filtering
