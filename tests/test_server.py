@@ -201,7 +201,7 @@ class DynamicGestureRecognizer:
 
 class EnhancedTestServer:
     def __init__(self):
-        self.pipeline = rs.pipeline()
+        self.pipeline = None
         self.config = rs.config()
         
         # Initialize filters
@@ -213,17 +213,102 @@ class EnhancedTestServer:
         self.spatial_filter.set_option(rs.option.filter_smooth_alpha, 0.5)
         self.spatial_filter.set_option(rs.option.filter_smooth_delta, 20)
         
-        # Initialize Kalman filter for depth smoothing
+        # Initialize other components
         self.depth_kalman = DepthKalmanFilter()
-        
-        # Initialize hand detector and classifier
         self.hand_detector = HandDetector(max_hands=1)
         self.gesture_classifier = GestureClassifier()
         self.dynamic_gesture_recognizer = DynamicGestureRecognizer()
 
         # Debug flags
         self.show_debug_info = True
+
+        # Recording variables
+        self.is_recording = False
+        self.realsense_recorder = None
         
+        # Get the project root directory (2 levels up from tests)
+        import os
+        self.project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        self.recording_path = os.path.join(self.project_root, "recordings")
+        print(f"Recording path set to: {self.recording_path}")
+        self.frame_count = 0
+
+    def initialize_recorder(self):
+        """Initialize video recorder"""
+        import os
+        from datetime import datetime
+        
+        try:
+            # Create recordings directory if it doesn't exist
+            if not os.path.exists(self.recording_path):
+                os.makedirs(self.recording_path)
+                
+            # Generate filename with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            video_path = os.path.join(self.recording_path, f"realsense_{timestamp}.mp4")
+            
+            # Initialize video writer with MP4V codec - widely supported
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Use MP4V codec
+            self.realsense_recorder = cv2.VideoWriter(
+                video_path,
+                fourcc,
+                30.0,  # FPS
+                (640, 480),  # Frame size
+                isColor=True  # Color video
+            )
+            
+            if not self.realsense_recorder.isOpened():
+                raise Exception("Failed to create VideoWriter")
+                
+            print(f"Recording to: {video_path}")
+            self.frame_count = 0
+            return True
+            
+        except Exception as e:
+            print(f"Error initializing recorder: {e}")
+            self.realsense_recorder = None
+            return False
+
+    def handle_recording(self, color_image):
+        """Handle recording of a frame"""
+        if self.is_recording and self.realsense_recorder is not None:
+            try:
+                # Ensure image is in BGR format (OpenCV default)
+                if len(color_image.shape) == 2:  # If grayscale
+                    color_image = cv2.cvtColor(color_image, cv2.COLOR_GRAY2BGR)
+                    
+                # Add recording indicator
+                frame_to_save = color_image.copy()
+                
+                # Write the frame
+                self.realsense_recorder.write(frame_to_save)
+                self.frame_count += 1
+                
+                # Add recording indicator to display (not saved)
+                cv2.circle(color_image, (30, 30), 15, (0, 0, 255), -1)
+                cv2.putText(
+                    color_image,
+                    f"REC {self.frame_count//30}s",
+                    (55, 40),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1,
+                    (0, 0, 255),
+                    2
+                )
+                
+            except Exception as e:
+                print(f"Error during recording: {e}")
+                self.stop_recording()
+
+    def stop_recording(self):
+        """Stop recording and release resources"""
+        if self.realsense_recorder is not None:
+            print(f"Stopping recording... Total frames: {self.frame_count}")
+            self.realsense_recorder.release()
+            self.realsense_recorder = None
+            self.is_recording = False
+            print("Recording completed")
+            
     def draw_debug_info(self, image, y_offset, text, color=(0, 255, 0)):
         """Helper function to draw debug text with background"""
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -289,6 +374,10 @@ class EnhancedTestServer:
     
     def initialize_camera(self):
         try:
+            if self.pipeline is not None:
+                self.pipeline.stop()
+            
+            self.pipeline = rs.pipeline()  # Create new pipeline
             self.config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
             self.config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
             print("Starting RealSense pipeline...")
@@ -320,6 +409,14 @@ class EnhancedTestServer:
                 "message": "Camera initialization failed"
             }))
             return
+
+        # Start recording automatically
+        print("Initializing recording...")
+        if self.initialize_recorder():
+            self.is_recording = True
+            print("Recording started automatically")
+        else:
+            print("Failed to start recording")
 
         try:
             while True:
@@ -420,15 +517,14 @@ class EnhancedTestServer:
                     
                     # Send data to Unity
                     await websocket.send(json.dumps(message))
+                    self.handle_recording(color_image)
 
                     # Show video feed
                     cv2.imshow('Hand Tracking', color_image)
                     
-                    key = cv2.waitKey(1) & 0xFF
-                    if key == ord('q'):
+                    # Simple quit with 'q'
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
-                    elif key == ord('d'):  # Toggle debug info
-                        self.show_debug_info = not self.show_debug_info
 
                     await asyncio.sleep(0.033)  # ~30 FPS
 
@@ -440,9 +536,12 @@ class EnhancedTestServer:
             print(f"Connection error: {e}")
         finally:
             print("Cleaning up...")
-            self.pipeline.stop()
+            if self.is_recording:
+                self.stop_recording()
+            if self.pipeline:
+                self.pipeline.stop()
             cv2.destroyAllWindows()
-
+            
     def _calculate_finger_states(self, hand):
         """Calculate finger states for Unity."""
         finger_states = []

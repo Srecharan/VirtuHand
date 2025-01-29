@@ -6,9 +6,51 @@
 ![TensorFlow](https://img.shields.io/badge/tensorflow-2.13.1-orange.svg)
 ![OpenCV](https://img.shields.io/badge/opencv-4.9.0-red.svg)
 
-VirtuHand is an advanced real-time hand gesture recognition system that enables natural interaction in 3D environments. By combining depth sensing, machine learning, and real-time physics simulation, it creates an intuitive bridge between physical hand movements and virtual interactions.
+VirtuHand is a sophisticated real-time hand gesture recognition system implementing a hybrid architecture combining classical computer vision techniques with deep learning approaches. The system utilizes Intel RealSense D435i's depth sensing capabilities enhanced by Kalman filtering for precise 3D tracking, while incorporating both MediaPipe-based gesture recognition and experimental ONNX neural network implementations for robust hand detection and tracking.
 
-[Video Demo Link - Coming Soon]
+## Demo Video
+![VirtuHand Demo](assets/flower_bouquet_c.mp4)
+
+Technical Stack
+Core Technologies
+
+Depth Sensing: Intel RealSense D435i with custom depth filtering
+State Estimation: Extended Kalman Filter for 3D position refinement
+Neural Networks: MediaPipe Hand Tracking + ONNX runtime optimization
+Real-time Communication: WebSocket-based client-server architecture
+
+Key Components
+
+Depth Processing Pipeline
+
+RealSense SDK integration (pyrealsense2)
+Multi-stage depth filtering
+Kalman filter-based depth smoothing
+Custom depth-aware gesture recognition
+
+
+Neural Network Implementation
+
+ONNX model conversion and optimization
+Unity Barracuda engine integration
+Real-time tensor preprocessing
+GPU-accelerated inference pipeline
+
+
+Gesture Recognition System
+
+Static gesture classification (GRAB, OPEN_PALM, PINCH, POINT)
+Dynamic gesture detection using temporal analysis
+Custom-trained sequence models
+Real-time confidence scoring
+
+
+Unity Integration
+
+WebSocket-based real-time data streaming
+Custom shader implementation
+Physics-based interaction system
+Dynamic animation control
 
 ## Key Features
 
