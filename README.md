@@ -8,7 +8,7 @@
 
 ## Overview
 
-VirtuHand is a sophisticated real-time hand gesture recognition system implementing a hybrid architecture that combines classical computer vision with deep learning approaches. The system leverages Intel RealSense D435i's depth sensing capabilities enhanced by Extended Kalman filtering for precise 3D tracking, while incorporating both MediaPipe-based gesture recognition and experimental ONNX neural network implementations for robust hand detection and pose estimation.
+VirtuHand is a sophisticated real-time hand gesture recognition system implementing a hybrid architecture that combines classical computer vision with deep learning approaches. The system leverages depth sensing camera's capabilities enhanced by Extended Kalman filtering for precise 3D tracking, while incorporating both MediaPipe-based gesture recognition and experimental ONNX neural network implementations for robust hand detection and pose estimation.
 
 <div align="center">
   <a href="assets/VirtuHand_overview.pdf">
@@ -45,7 +45,7 @@ VirtuHand is a sophisticated real-time hand gesture recognition system implement
 
 ### Advanced Hand Tracking & Depth Sensing
 - **Depth Camera Integration**:
-  - Intel RealSense D435i depth sensor (30 FPS, 640x480)
+  - Depth sensing camera (30 FPS, 640x480)
   - Multi-stage depth filtering pipeline
   - Sub-millimeter precision in optimal conditions
   - Custom depth data preprocessing and normalization
@@ -186,7 +186,7 @@ After running the server, switch to Unity and enter Game mode to begin hand trac
   - Configure WebSocket connection parameters
   - Set up gesture detection thresholds
 - Camera Setup:
-  - Position Intel RealSense D435i camera at appropriate height
+  - Position the depth sensing camera at appropriate height
   - Ensure proper lighting for optimal tracking
 
 ## Acknowledgments
