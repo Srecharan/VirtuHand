@@ -10,6 +10,12 @@
 
 VirtuHand is a sophisticated real-time hand gesture recognition system implementing a hybrid architecture that combines classical computer vision with deep learning approaches. The system leverages Intel RealSense D435i's depth sensing capabilities enhanced by Extended Kalman filtering for precise 3D tracking, while incorporating both MediaPipe-based gesture recognition and experimental ONNX neural network implementations for robust hand detection and pose estimation.
 
+<div align="center">
+  <a href="assets/VirtuHand_overview.pdf">
+    <img src="assets/First_page.png" width="600" alt="VirtuHand Technical Overview"/>
+    <p><i>Click on the image to view the complete Technical Overview PDF</i></p>
+  </a>
+</div>
 
 ### Interactive Demo: Virtual Flower Arrangement
 ![Full Demo](assets/full_demo_gesture.gif)
@@ -19,6 +25,21 @@ VirtuHand is a sophisticated real-time hand gesture recognition system implement
 ### Hand Articulation & Rigging Demo
 ![Hand Rigging](assets/hand_rig.gif)
 
+
+## Technical Architecture
+
+### System Architecture
+
+<div align="center">
+  <img src="assets/virtuhand_sys.png" width="800"/>
+  <p><i>Complete system architecture showing data flow from camera through Python backend to Unity frontend</i></p>
+</div>
+
+### Unity Integration
+- **Hand Model**: Fully articulated hand model with inverse kinematics
+- **Real-time Physics**: Dynamic object interaction and collision detection
+- **Custom Shaders**: Advanced material rendering and effects
+- **WebSocket Communication**: Low-latency data streaming protocol
 
 ## Core Features
 
@@ -56,7 +77,19 @@ VirtuHand is a sophisticated real-time hand gesture recognition system implement
   - PINCH: Precision thumb-index distance monitoring
   - POINT: Index extension with others closed detection
 
+  <div align="center">
+  <img src="assets/static_gestures.gif" width="700"/>
+  <p><i>Demonstration of supported static gestures: GRAB, OPEN_PALM, PINCH, and POINT</i></p>
+</div>
+
 ### Dynamic Gesture Recognition System
+- **Dynamic Gesture Recognition Architecture**:
+
+<div align="center">
+  <img src="assets/GRU.png" width="600"/>
+  <p><i>GRU-based dynamic gesture recognition pipeline with sequence preprocessing and temporal smoothing</i></p>
+</div>
+
 - **Custom Training Pipeline**:
   - Dataset: 20 sequences per gesture, 30 frames each
   - GRU architecture (input:63, hidden:32, layers:2)
@@ -77,10 +110,18 @@ VirtuHand is a sophisticated real-time hand gesture recognition system implement
   - Minimum sequence length: 30 frames
   - Real-time smoothing with 5-frame minimum consistency
 
-![Gesture Recognition](assets/gesture.gif)
-*Demonstration of supported gesture recognition*
+<div align="center">
+  <img src="assets/dynamic_gestures.gif" width="700"/>
+  <p><i>Demonstration of supported dynamic gestures: SWIPE, CIRCLE, and WAVE</i></p>
+</div>
 
-### Neural Network Integration (Experimental)
+### Neural Network Integration 
+- **ONNX Neural Network Architecture**:
+<div align="center">
+  <img src="assets/ONNX.png" width="700"/>
+  <p><i>ONNX neural network pipeline with parallel palm detection and hand landmark models</i></p>
+</div>
+
 - **ONNX-Based Hand Detection**:
   - Attempted replacement of MediaPipe's hand detection pipeline with ONNX models
   - Two-stage detection system:
@@ -107,41 +148,6 @@ VirtuHand is a sophisticated real-time hand gesture recognition system implement
   - Gesture classifications (real-time)
   - Joint angles for hand model
   - Dynamic gesture events
-
-## Technical Architecture
-
-### System Architecture
-```
-RealSense D435i Camera
-       ↓
-[Python Backend]
-   ├─── Hand Detection (MediaPipe)
-   ├─── Depth Processing (Kalman Filter)
-   ├─── Gesture Recognition
-   │    ├─── Static Gesture Detection
-   │    │    └─── Geometric Analysis
-   │    └─── Dynamic Gesture Detection
-   │         ├─── GRU Model
-   │         └─── Motion Pattern Analysis
-   └─── WebSocket Server
-           ↓
-[Unity Frontend]
-   ├─── WebSocket Client
-   ├─── Hand Model & Joint System
-   ├─── Flower Arrangement System
-   └─── Physics Interaction System
-         └─── Snapping & Animation
-
-Real-time Data Flow:
-Camera Feed → Detection → Processing → WebSocket → Unity Render
-(30+ FPS)    (10-15ms)   (5-8ms)     (~1ms)      (16.6ms)
-```
-
-### Unity Integration
-- **Hand Model**: Fully articulated hand model with inverse kinematics
-- **Real-time Physics**: Dynamic object interaction and collision detection
-- **Custom Shaders**: Advanced material rendering and effects
-- **WebSocket Communication**: Low-latency data streaming protocol
 
 ## Installation and Usage
 
@@ -182,38 +188,6 @@ After running the server, switch to Unity and enter Game mode to begin hand trac
 - Camera Setup:
   - Position Intel RealSense D435i camera at appropriate height
   - Ensure proper lighting for optimal tracking
-
-## Project Structure
-```
-VirtuHand/
-├── src/
-│   ├── camera/
-│   │   └── realsense.py          # RealSense camera interface
-│   ├── communication/
-│   │   └── websocket_server.py   # WebSocket implementation
-│   ├── gesture/
-│   │   ├── classifier.py         # Static gesture recognition
-│   │   ├── detector.py          # Hand detection & tracking
-│   │   ├── dynamic_gesture.py   # Dynamic gesture system
-│   │   ├── depth_utils.py       # Depth processing
-│   │   └── train_dynamic_gestures.py  # Training pipeline
-│   └── utils/
-│       └── visualization.py      # Debug visualization
-├── HandGestureInteraction/
-│   └── Assets/
-│       └── Scripts/
-│           ├── HandGestureController.cs    # Main Unity controller
-│           ├── ONNXHandGestureController.cs # ONNX integration
-│           └── NeuralNetworkCreator.cs     # Model initialization
-├── models/
-│   └── best_dynamic_gesture_model.pth   # Trained GRU model
-├── dataset/
-│   └── dynamic_gestures/    # Training data
-├── model_export/
-│   ├── export_models.py     # ONNX conversion
-│   └── download_models.py   # Model management
-└── configs/                 # Configuration files
-```
 
 ## Acknowledgments
 - [MediaPipe Hand Landmark Detection](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker) by Google
