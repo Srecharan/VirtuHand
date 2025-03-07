@@ -1,4 +1,4 @@
-# VirtuHand: Real-time Hand Gesture Recognition for AR Interaction
+# Real-time Hand Gesture Recognition for AR Interaction
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.8-blue.svg)
